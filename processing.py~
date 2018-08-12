@@ -1,0 +1,49 @@
+import multiprocessing
+from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
+import time
+start_time = time.time()
+
+global ordered_ngrams
+nonuni_grams = ["i_am","go_out"]
+nonuni_grams = nonuni_grams*1000
+#would make this nonunigrams list as global
+ordered_ngrams=nonuni_grams	
+
+articles = ["i am going back to city","let's go out somewhere"]
+articles = articles*10000
+from functools import partial
+import re
+def multipro(ordered_ngrams,art):
+    # lower case cuz all ngrams are all lower case
+    art = art.lower()
+
+    # remove double spaces from article cuz they hinder finding ngrams too
+    art = re.sub(' +',' ', art)
+
+    # replace "." and "," cuz they might be in the way when building ngrams
+    # Like: "This was bad ever since." might not find "ever_since" because there is a point at the end
+    # Note: here we create double spaces again on purpose so words that were seperated by "." or "," do
+    # not get converted in ngrams
+    art = art.replace('.', ' ')
+    art = art.replace(',', ' ')
+    art = " "+art+" "
+
+    hits = []
+    for i in ordered_ngrams:
+      i = " " + i + " "
+      i1 =  i.replace("_"," ")
+      #art = art.replace(i1," "+i+" ")
+      art = re.sub(i1,i,art)
+      if i in art:
+        hits.append(i)
+
+    # Finally, lets remove the double spaces created before
+    art = re.sub(' +',' ', art)
+    return [art, hits]
+pool = multiprocessing.Pool(3)
+all_hits = []
+func = partial(multipro, nonuni_grams)
+output = pool.map(func, articles)
+print("--- %s seconds ---" % (time.time() - start_time))
+print "task_done"
